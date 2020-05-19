@@ -20,6 +20,12 @@ struct ERRHEAPMAX: public exception{
     }
 };
 
+struct ERRPOSINVALIDA: public exception{
+    const char* what() const throw(){
+        return "Posição Invalida!";
+    }
+};
+
 
 //Classe que implementa um vector "semi-dinámico"
 //Vector não aumenta automaticamente quando atinge a capacidade maxima
@@ -208,13 +214,28 @@ class BTREEMAXHEAP{
         }
 
         //Coloca o valor da ultima posição do vetor na ordem correta
-        bool restaurarOrdemHeap(){
+        const bool restaurarOrdemHeap(){
             bool troca = true;
             int pos = heap->obterQuantidade()-1;
             while(pos!=0 || troca){
                 troca = trocarValores(heap->obterElemento(pos),obterPosicaoPai(pos));
             }
             return true;
+        }
+
+        //Retornar posição com valor maior
+        const int posicaoMaior(int posicaoEsquerda, int posicaoDireita) const {
+            if(posicaoEsquerda > heap->obterQuantidade() || posicaoEsquerda <= 0){
+                throw ERRPOSINVALIDA();
+            }
+            if(posicaoDireita > heap->obterQuantidade() || posicaoDireita <= 0){
+                throw ERRPOSINVALIDA();
+            }
+            if(heap->obterElemento(posicaoEsquerda) >= heap->obterElemento(posicaoDireita)){
+                return posicaoEsquerda;
+            } else {
+                return posicaoDireita;
+            }
         }
 
     public:
@@ -269,9 +290,6 @@ class BTREEMAXHEAP{
             }
             return false;
         }
-
-
-
 };
 
 //Classe que gere a execução dos comandos que estão no ficheiro
