@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <exception>
+#include <cmath>
 
 using namespace std;
 
@@ -11,7 +12,6 @@ struct ERRHEAPMIN: public exception{
     const char* what() const throw(){
         return "Heap vazio!";
     }
-
 };
 
 //Estrutura de Erros para Heap Cheio
@@ -103,7 +103,7 @@ public:
     }
 
     //Obter Quantidade de elemetos no vetor
-    const int obterQunatidade() const{
+    const int obterQuantidade() const{
         return quantidade;
     }
 
@@ -149,10 +149,47 @@ class BTREEMAXHEAP{
 
         //Comparar se primeiro elemento é maior do que o segundo
         //Serve para compararse o filho é maior do que o pai
-        bool
+        bool compararValores(int filho, int pai){
+            if(filho > pai){
+                return true;
+            }
+            return false;
+        }
 
         //Trocar elementos de posição
+        bool trocarValores(int posicaoInicial, int posicaoFinal){
+            if(posicaoInicial < heap->obterQuantidade() && posicaoFinal< heap->obterQuantidade()){
+                int aux = heap->obterElemento(posicaoInicial);
+                heap->alterarElemento(heap->obterElemento(posicaoFinal), posicaoInicial);
+                heap->alterarElemento(aux, posicaoFinal);
+                return true;
+            }
+            return false;
+        }
 
+        //Determinar indice pai do indice fornecido
+        const int obterPosicaoPai(int indice)const{
+            if(indice > 0){
+                return int(floor((indice+1) /2)-1); //Retorna o menor numero inteiro que resulta da divisão do indice por 2 
+            }
+            return -1; //Como o indice é a raiz da arvore não tem pai ou é inválido
+        }
+
+        //Determina indice do filho do lado esquerdo da arvore do indice fornecido
+        const int obterPosicaoFilhoEsquerdo(int indice)const{
+            if(indice >= 0){
+                return 2*indice+1;
+            }
+            return -1;
+        }
+
+        //Determina indice do filho do lado direito da arvore do indice fornecido
+        const int obterPosicaoFilhoDireito(int indice)const{
+            if(indice >= 0){
+                return 2*indice+2;
+            }
+            return -1;
+        }
 
 
     public:
