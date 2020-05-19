@@ -107,6 +107,15 @@ public:
         return quantidade;
     }
 
+    //Alterar o Valor da Quantidade de elementos no vetor
+    const bool alterarQuantidade(int valor){
+        if(valor <= capacidade){
+            quantidade= valor;
+            return true;
+        }
+        return false;
+    }
+
     //Obter elemento na posição do vector
     //Retorna -1 se não encontrar
     const int obterElemento(int posicao) const{
@@ -191,6 +200,14 @@ class BTREEMAXHEAP{
             return -1;
         }
 
+        //Inicializa posições do vetor
+        const bool inicializarHeap(){
+            for(int i = 0; i < heap->obterCapacidade(); i++){
+                heap->alterarElemento(-1,i);
+            }
+            return true; 
+        }
+
 
     public:
         //Construtor da Arvore Max-Heap
@@ -207,6 +224,41 @@ class BTREEMAXHEAP{
         bool inserirElemento(int valor){
 
         }
+
+        //Retorna o elemento do topo da arvore
+        const int elementoMaximo() const{
+            return heap->obterElemento(0);
+        }
+
+        //Retorna a dimensão atual da arvore
+        const int obterDimensao() const{
+            return heap->obterQuantidade();
+        }
+
+        //Obter a capacidade atual da arvore
+        const int obterCapacidadeHeap() const{
+            return heap->obterCapacidade();
+        }
+
+        //Reinicia os valores de toddas as posições do Heap
+        const bool reinicializarHeap(){
+            if(heap->obterQuantidade() > 0){
+                if(heap->alterarQuantidade(0))
+                    return inicializarHeap();
+            }
+            return false;
+        }
+
+        //Redimensionar Heap da árvore
+        const bool redimensionarHeap(int valor){
+            if(valor >0){
+                return heap->redimensionar(valor);
+            }
+            return false;
+        }
+
+
+
 };
 
 //Classe que gere a execução dos comandos que estão no ficheiro
