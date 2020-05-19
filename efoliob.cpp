@@ -3,7 +3,6 @@
 #include <sstream>
 #include <fstream>
 #include <exception>
-#include <cmath>
 
 using namespace std;
 
@@ -56,8 +55,8 @@ public:
     //Adicionar elementos ao vector
     bool adicionar(int valor){
         if (quantidade < capacidade){
-            quantidade++;
             array[quantidade] = valor;
+            quantidade++;
             return true;
         }
         return false;
@@ -179,7 +178,7 @@ class BTREEMAXHEAP{
         //Determinar indice pai do indice fornecido
         const int obterPosicaoPai(int indice)const{
             if(indice > 0){
-                return int(floor((indice+1) /2)-1); //Retorna o menor numero inteiro que resulta da divisão do indice por 2 
+                return (int((indice+1) /2)-1); //Retorna o menor numero inteiro que resulta da divisão do indice por 2 
             }
             return -1; //Como o indice é a raiz da arvore não tem pai ou é inválido
         }
@@ -208,6 +207,15 @@ class BTREEMAXHEAP{
             return true; 
         }
 
+        //Coloca o valor da ultima posição do vetor na ordem correta
+        bool restaurarOrdemHeap(){
+            bool troca = true;
+            int pos = heap->obterQuantidade()-1;
+            while(pos!=0 || troca){
+                troca = trocarValores(heap->obterElemento(pos),obterPosicaoPai(pos));
+            }
+            return true;
+        }
 
     public:
         //Construtor da Arvore Max-Heap
@@ -222,7 +230,12 @@ class BTREEMAXHEAP{
 
         //Inserir elementos na arvore
         bool inserirElemento(int valor){
-
+            //Como não está cheio então insere no vetor
+            if(!heap->adicionar(valor)){
+                throw ERRHEAPMAX(); //Erro por Vetor Cheio
+            }
+            restaurarOrdemHeap();
+            return true;
         }
 
         //Retorna o elemento do topo da arvore
