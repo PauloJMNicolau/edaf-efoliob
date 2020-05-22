@@ -1,0 +1,4 @@
+# test 00 (inspirado na alinea a)
+
+insert 7 9  3   8
+print

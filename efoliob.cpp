@@ -27,7 +27,7 @@ struct ERRPOSINVALIDA: public exception{
 };
 
 
-//Classe que implementa um vector "semi-dinámico"
+//Classe que implementa um vector "semi-dinámico" para uma Heap
 //Vector não aumenta automaticamente quando atinge a capacidade maxima
 //Vector elimina todos os valores armazenados quando é redimencionado
 class VECTOR{
@@ -85,21 +85,15 @@ public:
 
     //Remover ultimo elemento do vetor
     bool remover(){
-        array[quantidade] = -1;
+        array[quantidade-1] = -1;
         quantidade--;
         return true;
     }
 
-    //Remover elemento do vetor na posição
-    bool remover(int posicao){
-        if (posicao >= 0 && posicao < quantidade){
-            for (int i = posicao; i < quantidade - 1; i++){
-                array[i] = array[i + 1];
-            }
-            array[quantidade] = -1;
-            quantidade--;
-        }
-        return false;
+    //Remover Primeiro elemento do vetor
+    bool removerPrimeiro(){
+        array[0]=array[quantidade-1]; //Copia ultimo elemento para o inicio
+        return remover(); //Remove Ultimo elemento
     }
 
     //Obter capacidade do vetor
@@ -191,7 +185,7 @@ class BTREEMAXHEAP{
 
         //Determina indice do filho do lado esquerdo da arvore do indice fornecido
         const int obterPosicaoFilhoEsquerdo(int indice)const{
-            if(indice >= 0){
+            if(indice >= 0 && indice < heap->obterQuantidade()){
                 return 2*indice+1;
             }
             return -1;
@@ -199,7 +193,7 @@ class BTREEMAXHEAP{
 
         //Determina indice do filho do lado direito da arvore do indice fornecido
         const int obterPosicaoFilhoDireito(int indice)const{
-            if(indice >= 0){
+            if(indice >= 0 && indice < heap->obterQuantidade()){
                 return 2*indice+2;
             }
             return -1;
@@ -214,28 +208,53 @@ class BTREEMAXHEAP{
         }
 
         //Coloca o valor da ultima posição do vetor na ordem correta
-        const bool restaurarOrdemHeap(){
-            bool troca = true;
-            int pos = heap->obterQuantidade()-1;
-            while(pos!=0 || troca){
-                troca = trocarValores(heap->obterElemento(pos),obterPosicaoPai(pos));
+        const bool restaurarOrdemHeap(int posicao){
+            int filhoMaior = posicaoMaior(obterPosicaoFilhoEsquerdo(posicao), obterPosicaoFilhoDireito(posicao));
+            int maior = posicao;
+            maior = posicaoMaior(maior, filhoMaior);
+            if(maior != posicao){
+                trocarValores(posicao, maior);
+                restaurarOrdemHeap(maior);
             }
             return true;
         }
 
         //Retornar posição com valor maior
         const int posicaoMaior(int posicaoEsquerda, int posicaoDireita) const {
-            if(posicaoEsquerda > heap->obterQuantidade() || posicaoEsquerda <= 0){
-                throw ERRPOSINVALIDA();
+            //Verificar se posições são validas
+            if((posicaoEsquerda >= heap->obterQuantidade() || posicaoEsquerda <= 0) 
+            && (posicaoDireita >= heap->obterQuantidade() || posicaoDireita <= 0)){
+                return -1;
+            } 
+            int maior=-1;
+            if(posicaoEsquerda < heap->obterQuantidade() || posicaoEsquerda >= 0){
+                maior= posicaoEsquerda;
             }
-            if(posicaoDireita > heap->obterQuantidade() || posicaoDireita <= 0){
-                throw ERRPOSINVALIDA();
+            if(posicaoDireita < heap->obterQuantidade() || posicaoDireita >= 0){
+                if(maior < posicaoDireita){
+                    maior = posicaoDireita;
+                }
             }
-            if(heap->obterElemento(posicaoEsquerda) >= heap->obterElemento(posicaoDireita)){
-                return posicaoEsquerda;
-            } else {
-                return posicaoDireita;
+            return maior;
+        }
+
+        //Retorna a altura da Heap
+        const int alturaHeap(){
+            int altura=0;
+            int quantidade= heap->obterQuantidade();
+            while((quantidade /= 2) >1){
+                altura++;
             }
+            return altura;
+        }
+
+        //Calcula elementos do Nivel da Heap
+        const int elementosDoNivel(int nivel){
+            int elementos=1;
+            for(int i=0; i< nivel; i++){
+                elementos*=2;
+            }
+            return elementos;
         }
 
     public:
@@ -255,7 +274,7 @@ class BTREEMAXHEAP{
             if(!heap->adicionar(valor)){
                 throw ERRHEAPMAX(); //Erro por Vetor Cheio
             }
-            restaurarOrdemHeap();
+            restaurarOrdemHeap(heap->obterQuantidade()-1);
             return true;
         }
 
@@ -290,13 +309,88 @@ class BTREEMAXHEAP{
             }
             return false;
         }
+
+        //Apagar Elemento da Heap
+        const bool remover(){
+            if(heap->obterQuantidade() ==0){
+                throw ERRHEAPMIN();
+            }
+            if(heap->obterQuantidade() ==1){
+                heap->remover();
+            } else{
+                heap->removerPrimeiro();
+                restaurarOrdemHeap(0);
+            }
+        }
+
+        //Restaura a ordem em toda a Heap
+        const bool heapify_up(){
+            for(int i = heap->obterQuantidade() /2; i>0; i--){
+                restaurarOrdemHeap(i-1);
+            }
+            return true;
+        }
+
+        //Retorna uma string com o formato de arvore
+        const string imprimirHeap(){
+            string aux;
+            int altura = alturaHeap();
+            int indice =0;
+            for(int i=0; i< altura; i++){
+                aux.append("\n");
+                for(int e=0; e< elementosDoNivel(i); e++){
+                    if(indice< heap->obterQuantidade()){
+                        aux.append(to_string(heap->obterElemento(indice)));
+                        indice++;
+                        if(e<elementosDoNivel(i)-1){
+                            aux.append(" ");
+                        }
+                    }
+                }
+            }
+            return aux;
+        }
 };
 
 //Classe que gere a execução dos comandos que estão no ficheiro
 class INTERFACE{
     private:
+        BTREEMAXHEAP * heap;
         string comando;
         string argumentos;
+
+
+        //Executar Comando Inserir
+        void insert(){
+            try{
+                int aux;
+                bool res;
+                if(argumentos != " "){
+                    istringstream arg(argumentos);
+                    while(arg >> aux){
+                        res = heap->inserirElemento(aux);
+                    } 
+                } else{
+                    cout << "Comando " << comando<< ": Não existem valores a introduzir!"<<endl;
+                }
+            }catch (ERRHEAPMAX e){
+                cout << "Comando " <<comando <<": " <<e.what() <<endl;
+            }
+
+        }
+
+        void print(){
+    int aux;
+                bool res;
+                if(argumentos != " "){
+                    istringstream arg(argumentos);
+                    while(arg >> aux){
+                        res = heap->inserirElemento(aux);
+                    } 
+                } else{
+                    cout << "Comando " << comando<< ": Não existem valores a introduzir!"<<endl;
+                }
+        }
 
     public:
         //Constroi a interface
