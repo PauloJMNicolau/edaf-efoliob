@@ -1,4 +1,29 @@
 # test 00 (inspirado na alinea a)
 
-insert 7 9  3   8
+insert 7 9  3   8 10 19 7 5 7 4 3 2
 print
+
+print_max
+
+delete
+
+print
+print_max
+
+dim
+dim_max
+
+clear
+
+print
+print_max
+
+redim_max 25
+
+dim_max
+print
+
+heapify_up 20 5 2 4 74 8 6 21 5 6
+
+print
+print_max

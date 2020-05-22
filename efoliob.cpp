@@ -207,42 +207,58 @@ class BTREEMAXHEAP{
             return true; 
         }
 
-        //Coloca o valor da ultima posição do vetor na ordem correta
-        const bool restaurarOrdemHeap(int posicao){
-            int filhoMaior = posicaoMaior(obterPosicaoFilhoEsquerdo(posicao), obterPosicaoFilhoDireito(posicao));
-            int maior = posicao;
-            maior = posicaoMaior(maior, filhoMaior);
-            if(maior != posicao){
-                trocarValores(posicao, maior);
-                restaurarOrdemHeap(maior);
-            }
-            return true;
-        }
-
         //Retornar posição com valor maior
-        const int posicaoMaior(int posicaoEsquerda, int posicaoDireita) const {
+        const int posicaoMaior(int posicao) const {
             //Verificar se posições são validas
-            if((posicaoEsquerda >= heap->obterQuantidade() || posicaoEsquerda <= 0) 
-            && (posicaoDireita >= heap->obterQuantidade() || posicaoDireita <= 0)){
-                return -1;
-            } 
-            int maior=-1;
-            if(posicaoEsquerda < heap->obterQuantidade() || posicaoEsquerda >= 0){
-                maior= posicaoEsquerda;
+            int maior = posicao;
+            int aux = obterPosicaoFilhoEsquerdo(posicao);
+            if(aux < heap->obterQuantidade() && aux >= 0){
+                if(heap->obterElemento(maior) < heap->obterElemento(aux)){
+                    maior= aux;
+                }
             }
-            if(posicaoDireita < heap->obterQuantidade() || posicaoDireita >= 0){
-                if(maior < posicaoDireita){
-                    maior = posicaoDireita;
+            aux = obterPosicaoFilhoDireito(posicao);
+            if(aux < heap->obterQuantidade() && aux >= 0){
+                if(heap->obterElemento(maior) < heap->obterElemento(aux)){
+                    maior= aux;
                 }
             }
             return maior;
         }
 
+        //Coloca o valor da ultima posição do vetor na ordem correta
+        const bool restaurarOrdemHeap(int posicao){
+            if(posicao>0){
+                int pai= obterPosicaoPai(posicao);
+                if(pai != -1){
+                    if(heap->obterElemento(pai)< heap->obterElemento(posicao)){
+                        trocarValores(posicao,pai);
+                        restaurarOrdemHeap(pai);
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        //Restaura a ordem da Heap no Remover
+        const bool restaurarOrdemHeapDelete(int posicao){
+            if(posicao >=0){
+                int maior = posicaoMaior(posicao);
+                if(maior != posicao){
+                    trocarValores(posicao,maior);
+                    restaurarOrdemHeapDelete(maior);
+                }
+                return true;
+            }
+            return false;
+        }
+       
         //Retorna a altura da Heap
         const int alturaHeap(){
-            int altura=0;
+            int altura=1;
             int quantidade= heap->obterQuantidade();
-            while((quantidade /= 2) >1){
+            while((quantidade /= 2) >0){
                 altura++;
             }
             return altura;
@@ -280,6 +296,9 @@ class BTREEMAXHEAP{
 
         //Retorna o elemento do topo da arvore
         const int elementoMaximo() const{
+            if(heap->obterQuantidade()==0){
+                throw ERRHEAPMIN();
+            }
             return heap->obterElemento(0);
         }
 
@@ -319,20 +338,25 @@ class BTREEMAXHEAP{
                 heap->remover();
             } else{
                 heap->removerPrimeiro();
-                restaurarOrdemHeap(0);
+                restaurarOrdemHeapDelete(0);
             }
+            return true;
         }
 
         //Restaura a ordem em toda a Heap
-        const bool heapify_up(){
+        const bool heapify_up(VECTOR * vetor){
+            delete heap;
+            heap = vetor;
             for(int i = heap->obterQuantidade() /2; i>0; i--){
-                restaurarOrdemHeap(i-1);
+                restaurarOrdemHeapDelete(i-1);
             }
             return true;
         }
 
         //Retorna uma string com o formato de arvore
         const string imprimirHeap(){
+            if(heap->obterQuantidade()==0)
+                throw ERRHEAPMIN();
             string aux;
             int altura = alturaHeap();
             int indice =0;
@@ -349,6 +373,93 @@ class BTREEMAXHEAP{
                 }
             }
             return aux;
+        }
+};
+
+//Classe de No de uma fila (para heapify_up)
+class NO{
+    private:
+        int valor;
+        NO * proximo;
+        NO * anterior;
+
+    public:
+        //Construtor No da Fila
+        NO(int numero){
+            valor = numero;
+            proximo = this;
+            anterior = this;
+        }
+
+        //Destrutor de No da fila
+        ~NO(){
+            valor=0;
+            proximo = nullptr;
+        }
+
+        //Altera o valor de proximo da fila
+        bool alterarProximo(NO * novo){
+            proximo = novo;
+            return true;
+        }
+
+        bool alterarAnterior(NO * novo){
+            anterior = novo;
+            return true;
+        }
+
+        NO * obterProximo(){
+            return proximo;
+        }
+
+        NO * obterAnterior(){
+            return anterior;
+        }
+
+        const int obterValor(){
+            return valor;
+        }
+};
+
+//Classe para gestão de uma fila (para heapify_up)
+class FILA{
+    private:
+        int elementos;
+        NO * inicio;
+
+    public:
+        //Construtor da Fila
+        FILA(){
+            elementos = 0;
+            inicio = nullptr;
+        }
+
+        bool inserir(int valor){
+            NO * novo = new NO(valor);
+            if(elementos == 0){
+                inicio = novo;
+            } else{
+                novo->alterarAnterior(inicio->obterAnterior());
+                novo->alterarProximo(inicio);
+                inicio->alterarAnterior(novo);
+                novo->obterAnterior()->alterarProximo(novo);
+            }
+            elementos++;
+            return true;
+        }
+        
+
+        int remover(){
+            if(elementos >0){
+                int valor = inicio->obterValor();
+                inicio->obterAnterior()->alterarProximo(inicio->obterProximo());
+                NO * temp = inicio;
+                inicio = inicio->obterProximo();
+                delete temp;
+                elementos--;
+                return valor;
+            }
+            return -1;
         }
 };
 
@@ -376,20 +487,95 @@ class INTERFACE{
             }catch (ERRHEAPMAX e){
                 cout << "Comando " <<comando <<": " <<e.what() <<endl;
             }
-
         }
 
-        void print(){
-    int aux;
+        //Executa o comando de Imprimir
+        void imprimir(){
+            
+            try{
+                cout << "Heap=" << heap->imprimirHeap() <<endl;
+            } catch (ERRHEAPMIN e){
+                cout << "Comando " <<comando <<": " <<e.what() <<endl;
+            }
+        }
+
+        //Executa comando de Imprimir valor Maximo
+        void imprimirMax(){
+            try{
+                int max = heap->elementoMaximo();
+                cout << "Max= " << max <<endl;
+            } catch (ERRHEAPMIN e){
+                cout << "Comando " <<comando <<": " <<e.what() <<endl;
+            }
+        }
+
+        //Imprimir quantidade de elementos na arvore
+        void imprimirDim(){
+            cout << "Heap tem " << heap->obterDimensao() << " itens" <<endl;
+        }
+
+        //Imprimir quantidade de elementos na arvore
+        void imprimirCapacidade(){
+            cout << "Heap tem capacidade " << heap->obterCapacidadeHeap() << " itens" <<endl;
+        }
+
+        //Apaga todo o vetor
+        void apagar(){
+            heap->reinicializarHeap();
+        }
+
+        //Redimensiona o tamanho do vetor
+        void redimensionar(){
+            int aux;
+            bool res;
+            if(argumentos != " "){
+                istringstream arg(argumentos);
+                while(arg >> aux){
+                    res = heap->redimensionarHeap(aux);
+                } 
+            } else{
+                cout << "Comando " << comando<< ": Não existem valores a introduzir!"<<endl;
+            }
+        }
+
+        //Executa Comando Remover
+        void remover(){
+            try{
+                heap->remover();
+            } catch(ERRHEAPMIN e){
+                cout << "Comando " <<comando <<": " <<e.what() <<endl;
+            }
+        }
+
+        //Executa comando Heapify_up
+        void reconstruirVetor(){
+            try{
+                int aux;
                 bool res;
                 if(argumentos != " "){
+                    VECTOR  * temp = new VECTOR();
+                    int tamanho = 0;
+                    FILA * auxFila = new FILA();
                     istringstream arg(argumentos);
                     while(arg >> aux){
-                        res = heap->inserirElemento(aux);
+                        tamanho++;
+                        auxFila->inserir(aux);
                     } 
+                    if(tamanho > temp->obterCapacidade()){
+                        temp->redimensionar(tamanho);
+                    }
+                    while(tamanho!=0){
+                        temp->adicionar(auxFila->remover());
+                        tamanho--;
+                    }
+                    delete auxFila;
+                    heap->heapify_up(temp);
                 } else{
                     cout << "Comando " << comando<< ": Não existem valores a introduzir!"<<endl;
                 }
+            }catch (ERRHEAPMAX e){
+                cout << "Comando " <<comando <<": " <<e.what() <<endl;
+            }
         }
 
     public:
@@ -397,10 +583,13 @@ class INTERFACE{
         INTERFACE(){
             this->comando = "";
             this->argumentos = "";
+            this->heap=new BTREEMAXHEAP();
         }
 
         //Destroi a interface
         ~INTERFACE(){
+            delete heap;
+            heap = nullptr;
             this->comando = "";
             this->argumentos = "";
         }
@@ -418,11 +607,27 @@ class INTERFACE{
         //Executa o comando respectivo
         void executaComando(){
             if (comando == "insert"){
-                //insert();
-            } else {
+                insert();
+            } else if(comando == "print"){
+                imprimir();
+            } else if(comando == "print_max"){
+                imprimirMax();
+            } else if(comando == "dim"){
+                imprimirDim();
+            } else if(comando == "dim_max"){
+                imprimirCapacidade();
+            } else if(comando == "clear"){
+                apagar();
+            } else if(comando == "delete"){
+                remover();
+            } else if(comando == "heapify_up"){
+                reconstruirVetor();
+            } else if(comando == "redim_max"){
+                redimensionar();
+            } else
                 cout << "Comando não suportado!" << endl; // Caso o comando não seja válido
-            }
         }
+
 };
 
 int main(){
