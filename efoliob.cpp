@@ -317,6 +317,8 @@ class BTREEMAXHEAP{
             if(heap->obterQuantidade() > 0){
                 if(heap->alterarQuantidade(0))
                     return inicializarHeap();
+            } else{
+                throw ERRHEAPMIN();
             }
             return false;
         }
@@ -493,7 +495,8 @@ class INTERFACE{
         void imprimir(){
             
             try{
-                cout << "Heap=" << heap->imprimirHeap() <<endl;
+                string texto = heap->imprimirHeap();
+                cout << "Heap=" << texto <<endl;
             } catch (ERRHEAPMIN e){
                 cout << "Comando " <<comando <<": " <<e.what() <<endl;
             }
@@ -521,7 +524,11 @@ class INTERFACE{
 
         //Apaga todo o vetor
         void apagar(){
-            heap->reinicializarHeap();
+            try{
+                heap->reinicializarHeap();
+            } catch (ERRHEAPMIN e){
+                cout << "Comando " <<comando <<": " <<e.what() <<endl;
+            }
         }
 
         //Redimensiona o tamanho do vetor
