@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 //Estrutura de Erros para Heap vazio
 struct ERRHEAPMIN: public exception{
     const char* what() const throw(){
@@ -399,25 +400,29 @@ class NO{
             proximo = nullptr;
         }
 
-        //Altera o valor de proximo da fila
+        //Altera o valor de proximo do no
         bool alterarProximo(NO * novo){
             proximo = novo;
             return true;
         }
 
+        //Alterar o valor de Anterior do no
         bool alterarAnterior(NO * novo){
             anterior = novo;
             return true;
         }
 
+        //Obter o proximo nó ao no
         NO * obterProximo(){
             return proximo;
         }
 
+        //Obter o nó anterior ao nó
         NO * obterAnterior(){
             return anterior;
         }
 
+        //Obter o valor do nó
         const int obterValor(){
             return valor;
         }
@@ -436,6 +441,14 @@ class FILA{
             inicio = nullptr;
         }
 
+        //Destrutor a Fila
+        ~FILA(){
+            while(elementos >0){
+                remover();
+            }
+        }
+
+        //Inserir elementos na fila
         bool inserir(int valor){
             NO * novo = new NO(valor);
             if(elementos == 0){
@@ -450,7 +463,7 @@ class FILA{
             return true;
         }
         
-
+        //Remover elementos na fila
         int remover(){
             if(elementos >0){
                 int valor = inicio->obterValor();
