@@ -21,13 +21,6 @@ struct ERRHEAPMAX: public exception{
     }
 };
 
-struct ERRPOSINVALIDA: public exception{
-    const char* what() const throw(){
-        return "Posição Invalida!";
-    }
-};
-
-
 //Classe que implementa um vector "semi-dinámico" para uma Heap
 //Vector não aumenta automaticamente quando atinge a capacidade maxima
 //Vector elimina todos os valores armazenados quando é redimencionado
@@ -59,7 +52,7 @@ public:
         quantidade = 0;
     }
 
-    //Adicionar elementos ao vector
+    //Adicionar elementos ao vector na ultima posição livre
     bool adicionar(int valor){
         if (quantidade < capacidade){
             array[quantidade] = valor;
@@ -86,7 +79,7 @@ public:
 
     //Remover ultimo elemento do vetor
     bool remover(){
-        array[quantidade-1] = -1;
+        array[quantidade-1] = -1; //limpa o valor da ultima posição
         quantidade--;
         return true;
     }
@@ -210,14 +203,16 @@ class BTREEMAXHEAP{
 
         //Retornar posição com valor maior
         const int posicaoMaior(int posicao) const {
-            //Verificar se posições são validas
+            //Atribui a posiçãão atual como sendo maior
             int maior = posicao;
+            //Verifica se existe filho esquerdo e compara se este possui valor maior do que a posiçãão original
             int aux = obterPosicaoFilhoEsquerdo(posicao);
             if(aux < heap->obterQuantidade() && aux >= 0){
                 if(heap->obterElemento(maior) < heap->obterElemento(aux)){
                     maior= aux;
                 }
             }
+            //Verifica se existe filho direito e compara se este possui valor maior do que a posição atualmente em maior
             aux = obterPosicaoFilhoDireito(posicao);
             if(aux < heap->obterQuantidade() && aux >= 0){
                 if(heap->obterElemento(maior) < heap->obterElemento(aux)){
@@ -228,33 +223,40 @@ class BTREEMAXHEAP{
         }
 
         //Coloca o valor da ultima posição do vetor na ordem correta
-        const bool restaurarOrdemHeap(int posicao){
-            if(posicao>0){
-                int pai= obterPosicaoPai(posicao);
-                if(pai != -1){
-                    if(heap->obterElemento(pai)< heap->obterElemento(posicao)){
-                        trocarValores(posicao,pai);
-                        restaurarOrdemHeap(pai);
+        //Ordem 0-inserir, 1 -remover
+        const bool restaurarOrdemHeap(int posicao,int ordem){
+            //Ordenar na ordem de folhas para raiz
+            if(ordem ==0){
+                if(posicao>0){
+                    //Verifica se existe pai
+                    int pai= obterPosicaoPai(posicao);
+                    if(pai != -1){
+                        //Verifica se valor de pai é menor que a do filho e troca se for menor
+                        if(heap->obterElemento(pai)< heap->obterElemento(posicao)){
+                            trocarValores(posicao,pai);
+                            restaurarOrdemHeap(pai, ordem);
+                        }
                     }
+                    return true;
+                }   
+            } 
+            //Ordenar na ordem de raiz para folhas
+            else if(ordem ==1){
+                if(posicao >=0){
+                    //Obtem a posição maior entre o nó e os filhos
+                    int maior = posicaoMaior(posicao);
+                    //Verifica se a posição maior é a posição original
+                    if(maior != posicao){
+                        //Como posição maior mudou, então troca-se os valores e volta a executar-se a ordenação para o novo nó
+                        trocarValores(posicao,maior);
+                        restaurarOrdemHeap(maior, ordem);
+                    }
+                    return true;    
                 }
-                return true;
             }
             return false;
         }
-
-        //Restaura a ordem da Heap no Remover
-        const bool restaurarOrdemHeapDelete(int posicao){
-            if(posicao >=0){
-                int maior = posicaoMaior(posicao);
-                if(maior != posicao){
-                    trocarValores(posicao,maior);
-                    restaurarOrdemHeapDelete(maior);
-                }
-                return true;
-            }
-            return false;
-        }
-       
+     
         //Retorna a altura da Heap
         const int alturaHeap(){
             int altura=1;
@@ -291,7 +293,8 @@ class BTREEMAXHEAP{
             if(!heap->adicionar(valor)){
                 throw ERRHEAPMAX(); //Erro por Vetor Cheio
             }
-            restaurarOrdemHeap(heap->obterQuantidade()-1);
+            //Reordenar a arvore em ordem de folha para raiz
+            restaurarOrdemHeap(heap->obterQuantidade()-1,0);
             return true;
         }
 
@@ -337,11 +340,14 @@ class BTREEMAXHEAP{
             if(heap->obterQuantidade() ==0){
                 throw ERRHEAPMIN();
             }
+            //Se heap só tem um elemento então basta remover
             if(heap->obterQuantidade() ==1){
                 heap->remover();
-            } else{
+            } 
+            //Se heap tiver mais elementos então é preciso reordenar os elemento na ordem de raiz para folha
+            else{
                 heap->removerPrimeiro();
-                restaurarOrdemHeapDelete(0);
+                restaurarOrdemHeap(0,1);
             }
             return true;
         }
@@ -350,8 +356,9 @@ class BTREEMAXHEAP{
         const bool heapify_up(VECTOR * vetor){
             delete heap;
             heap = vetor;
+            //Obtem o ultimo elemento que não é folha e percorre em ordem até à raiz
             for(int i = heap->obterQuantidade() /2; i>0; i--){
-                restaurarOrdemHeapDelete(i-1);
+                restaurarOrdemHeap(i-1,1);
             }
             return true;
         }
@@ -363,12 +370,16 @@ class BTREEMAXHEAP{
             string aux;
             int altura = alturaHeap();
             int indice =0;
+            //Percorre um ciclo até a altura maxima da arvore
             for(int i=0; i< altura; i++){
                 aux.append("\n");
+                //imprime a quantidade de elementos que devem ser mostrados no nivel atual
                 for(int e=0; e< elementosDoNivel(i); e++){
+                    //Verifica se o indice a imprimir pertence à arvore
                     if(indice< heap->obterQuantidade()){
                         aux.append(to_string(heap->obterElemento(indice)));
                         indice++;
+                        //Se não for o ultimo elemento da linha imprime um espaço
                         if(e<elementosDoNivel(i)-1){
                             aux.append(" ");
                         }
@@ -479,12 +490,12 @@ class FILA{
 };
 
 //Classe que gere a execução dos comandos que estão no ficheiro
+//Reaproveitamento de código do Efolio A - Apenas com alterações para os comandos novos
 class INTERFACE{
     private:
         BTREEMAXHEAP * heap;
         string comando;
         string argumentos;
-
 
         //Executar Comando Inserir
         void insert(){
@@ -670,9 +681,8 @@ int main(){
     }
 
     //Fim Codigo HR */
-
+    
     //Código IDE
-
     fstream file;
     file.open("cmd.txt", ios::in);
     while (getline(file, linha)){ //Lê o ficheiro até ao final
@@ -690,5 +700,6 @@ int main(){
     file.close();
 
     //Fim Código IDE*/
+
     return 0;
 }
